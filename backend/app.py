@@ -1,8 +1,10 @@
 from flask import Flask
+from flask_cors import CORS
 from db.models import db
 from auth.routes import auth_bp, bcrypt
 
-app = Flask(__name__)
+app = Flask(__name__) 
+CORS(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///snapindex.db"
 db.init_app(app)
 bcrypt.init_app(app)
