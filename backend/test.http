@@ -1,0 +1,18 @@
+### Register a new user
+POST http://127.0.0.1:5000/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Test Student",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Login
+POST http://127.0.0.1:5000/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
