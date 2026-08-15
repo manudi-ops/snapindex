@@ -13,3 +13,6 @@ frontend/dist/
 .vscode/
 
 backend/uploads/
+
+backend/search/faiss_index.bin
+backend/search/faiss_idmap.pkl

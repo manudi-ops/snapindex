@@ -28,3 +28,4 @@ class AcademicResource(db.Model):
     extractedText = db.Column(db.Text, nullable=True)
     ocrConfidence = db.Column(db.Float, nullable=True)
     needsReview = db.Column(db.Boolean, default=False)
+    embeddingVectorID = db.Column(db.Integer, nullable=True)
