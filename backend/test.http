@@ -16,3 +16,18 @@ Content-Type: application/json
   "email": "test@example.com",
   "password": "password123"
 }
+
+### Upload a resource
+POST http://127.0.0.1:5000/resources/upload
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="userID"
+
+1
+--boundary
+Content-Disposition: form-data; name="file"; filename="test.png"
+Content-Type: image/png
+
+< D:\Pictures\Screenshots\Screenshot 2026-08-13 0517544.png
+--boundary--
