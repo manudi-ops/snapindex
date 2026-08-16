@@ -8,7 +8,7 @@ INDEX_PATH = os.path.join(os.path.dirname(__file__), "faiss_index.bin")
 IDMAP_PATH = os.path.join(os.path.dirname(__file__), "faiss_idmap.pkl")
 
 _index = None
-_id_map = []  # position in FAISS index -> resourceID
+_id_map = []  # position in FAISS index (resourceID)
 
 def get_index():
     global _index, _id_map
@@ -35,3 +35,21 @@ def _save():
     faiss.write_index(_index, INDEX_PATH)
     with open(IDMAP_PATH, "wb") as f:
         pickle.dump(_id_map, f)
+
+def search_index(query_vector, k=5):
+    index = get_index()
+    if index.ntotal == 0:
+        return []
+
+    vector = np.array([query_vector], dtype="float32")
+    faiss.normalize_L2(vector)
+
+    scores, positions = index.search(vector, min(k, index.ntotal))
+
+    results = []
+    for score, pos in zip(scores[0], positions[0]):
+        if pos == -1:
+            continue
+        resource_id = _id_map[pos]
+        results.append({"resourceID": resource_id, "score": float(score)})
+    return results

@@ -15,6 +15,11 @@ function App() {
   const [uploadResult, setUploadResult] = useState(null);
   const [uploadError, setUploadError] = useState("");
 
+const [activeTab, setActiveTab] = useState("upload");
+const [searchQuery, setSearchQuery] = useState("");
+const [searchResults, setSearchResults] = useState([]);
+const [searchError, setSearchError] = useState("");
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginMessage("");
@@ -44,13 +49,12 @@ function App() {
     e.preventDefault();
     setUploadError("");
     setUploadResult(null);
-
     if (!file) {
       setUploadError("Please choose a file first.");
       return;
     }
-
     const formData = new FormData();
+
     formData.append("userID", userID);
     formData.append("file", file);
 
@@ -67,6 +71,27 @@ function App() {
       }
     } catch {
       setUploadError("Could not reach the server.");
+    }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setSearchError("");
+    setSearchResults([]);
+    try {
+      const response = await fetch("http://127.0.0.1:5000/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: searchQuery }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSearchResults(data.results || []);
+      } else {
+        setSearchError(data.error || "Search failed.");
+      }
+    } catch {
+      setSearchError("Could not reach the server.");
     }
   };
 
@@ -92,35 +117,76 @@ function App() {
     );
   }
 
-  return (
-    <div style={{ maxWidth: "480px", margin: "80px auto", fontFamily: "sans-serif" }}>
+ return (
+    <div style={{ maxWidth: "600px", margin: "80px auto", fontFamily: "sans-serif" }}>
       <h2>Welcome, {fullName}</h2>
-      <h3>Upload a Resource</h3>
-      <form onSubmit={handleUpload}>
-        <input
-          type="file"
-          accept=".png,.jpg,.jpeg,.pdf"
-          onChange={(e) => setFile(e.target.files[0])}
-          style={{ marginBottom: "12px" }}
-        />
-        <br />
-        <button type="submit" style={{ padding: "8px 16px" }}>Upload</button>
-      </form>
 
-      {uploadError && <p style={{ color: "red" }}>{uploadError}</p>}
+      <div style={{ marginBottom: "20px" }}>
+        <button onClick={() => setActiveTab("upload")} style={{ marginRight: "8px", fontWeight: activeTab === "upload" ? "bold" : "normal" }}>
+          Upload
+        </button>
+        <button onClick={() => setActiveTab("search")} style={{ fontWeight: activeTab === "search" ? "bold" : "normal" }}>
+          Search
+        </button>
+      </div>
 
-      {uploadResult && (
-        <div style={{ marginTop: "16px", padding: "12px", border: "1px solid #ccc" }}>
-          <p><strong>Uploaded successfully.</strong></p>
-          <p>Resource ID: {uploadResult.resourceID}</p>
-          <p>OCR Confidence: {uploadResult.ocrConfidence ? uploadResult.ocrConfidence.toFixed(1) + "%" : "N/A"}</p>
-          {uploadResult.needsReview && (
-            <p style={{ color: "orange" }}>⚠ Low OCR confidence — flagged for review.</p>
+      {activeTab === "upload" && (
+        <div>
+          <h3>Upload a Resource</h3>
+          <form onSubmit={handleUpload}>
+            <input
+              type="file"
+              accept=".png,.jpg,.jpeg,.pdf"
+              onChange={(e) => setFile(e.target.files[0])}
+              style={{ marginBottom: "12px" }}
+            />
+            <br />
+            <button type="submit" style={{ padding: "8px 16px" }}>Upload</button>
+          </form>
+          {uploadError && <p style={{ color: "red" }}>{uploadError}</p>}
+          {uploadResult && (
+            <div style={{ marginTop: "16px", padding: "12px", border: "1px solid #ccc" }}>
+              <p><strong>Uploaded successfully.</strong></p>
+              <p>Resource ID: {uploadResult.resourceID}</p>
+              <p>OCR Confidence: {uploadResult.ocrConfidence ? uploadResult.ocrConfidence.toFixed(1) + "%" : "N/A"}</p>
+              {uploadResult.needsReview && (
+                <p style={{ color: "orange" }}>⚠ Low OCR confidence — flagged for review.</p>
+              )}
+              <p><strong>Extracted text:</strong></p>
+              <p style={{ maxHeight: "150px", overflow: "auto", background: "#f5f5f5", padding: "8px" }}>
+                {uploadResult.extractedText || "(no text extracted)"}
+              </p>
+            </div>
           )}
-          <p><strong>Extracted text:</strong></p>
-          <p style={{ maxHeight: "150px", overflow: "auto", background: "#f5f5f5", padding: "8px" }}>
-            {uploadResult.extractedText || "(no text extracted)"}
-          </p>
+        </div>
+      )}
+
+      {activeTab === "search" && (
+        <div>
+          <h3>Search Your Resources</h3>
+          <form onSubmit={handleSearch}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="e.g. customer order process"
+              style={{ width: "100%", padding: "8px", marginBottom: "8px" }}
+            />
+            <button type="submit" style={{ padding: "8px 16px" }}>Search</button>
+          </form>
+
+          {searchError && <p style={{ color: "red" }}>{searchError}</p>}
+
+          {searchResults.length === 0 && !searchError && (
+            <p style={{ color: "#888" }}>No results yet — try a search above.</p>
+          )}
+
+          {searchResults.map((r) => (
+            <div key={r.resourceID} style={{ marginTop: "12px", padding: "12px", border: "1px solid #ccc" }}>
+              <p><strong>{r.title}</strong> ({r.similarityScore}% match)</p>
+              <p style={{ fontSize: "14px", color: "#555" }}>{r.extractedText}...</p>
+            </div>
+          ))}
         </div>
       )}
     </div>

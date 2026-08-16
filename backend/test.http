@@ -31,3 +31,11 @@ Content-Type: image/png
 
 < D:\Pictures\Screenshots\Screenshot 2026-08-13 0517544.png
 --boundary--
+
+### Search
+POST http://127.0.0.1:5000/search
+Content-Type: application/json
+
+{
+  "query": "customer order process"
+}

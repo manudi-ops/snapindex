@@ -3,6 +3,7 @@ from flask_cors import CORS
 from db.models import db
 from auth.routes import auth_bp, bcrypt
 from ingestion.routes import ingestion_bp
+from search.routes import search_bp
 
 app = Flask(__name__) 
 CORS(app)
@@ -11,6 +12,7 @@ db.init_app(app)
 bcrypt.init_app(app)
 app.register_blueprint(auth_bp)
 app.register_blueprint(ingestion_bp)
+app.register_blueprint(search_bp)
 
 with app.app_context():
     db.create_all()
