@@ -6,7 +6,7 @@ from PIL import Image
 import pytesseract
 from db.models import db, AcademicResource
 from search.embedding_service import generate_embedding
-from search.faiss_store import add_embedding
+from search.faiss_store import add_embedding, find_duplicates
 
 ingestion_bp = Blueprint("ingestion", __name__)
 
@@ -70,9 +70,15 @@ def upload_resource():
     db.session.commit()
 
     embedding_vector_id = None
+    duplicate_warning = None
     if extracted_text:
         embedding = generate_embedding(extracted_text)
         if embedding is not None:
+            duplicates = find_duplicates(embedding, exclude_resource_id=resource.resourceID)
+            if duplicates:
+                duplicate_warning = duplicates
+
+
             embedding_vector_id = add_embedding(resource.resourceID, embedding)
             resource.embeddingVectorID = embedding_vector_id
             db.session.commit()
@@ -83,4 +89,5 @@ def upload_resource():
         "extractedText": extracted_text,
         "ocrConfidence": confidence,
         "needsReview": needs_review,
+        "duplicateWarning": duplicate_warning,
     }), 201

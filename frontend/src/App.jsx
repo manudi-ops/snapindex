@@ -15,10 +15,10 @@ function App() {
   const [uploadResult, setUploadResult] = useState(null);
   const [uploadError, setUploadError] = useState("");
 
-const [activeTab, setActiveTab] = useState("upload");
-const [searchQuery, setSearchQuery] = useState("");
-const [searchResults, setSearchResults] = useState([]);
-const [searchError, setSearchError] = useState("");
+  const [activeTab, setActiveTab] = useState("upload");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchError, setSearchError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -54,10 +54,8 @@ const [searchError, setSearchError] = useState("");
       return;
     }
     const formData = new FormData();
-
     formData.append("userID", userID);
     formData.append("file", file);
-
     try {
       const response = await fetch("http://127.0.0.1:5000/resources/upload", {
         method: "POST",
@@ -97,94 +95,122 @@ const [searchError, setSearchError] = useState("");
 
   if (!loggedIn) {
     return (
-      <div style={{ maxWidth: "360px", margin: "80px auto", fontFamily: "sans-serif" }}>
-        <h2>SnapIndex Login</h2>
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: "12px" }}>
-            <label>Email</label><br />
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "100%", padding: "8px" }} />
-          </div>
-          <div style={{ marginBottom: "12px" }}>
-            <label>Password</label><br />
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: "100%", padding: "8px" }} />
-          </div>
-          <button type="submit" style={{ padding: "8px 16px" }}>Log In</button>
-        </form>
-        {loginMessage && (
-          <p style={{ color: loginError ? "red" : "green", marginTop: "16px" }}>{loginMessage}</p>
-        )}
+      <div className="si-container">
+        <div className="si-card">
+          <h2 className="si-title">SnapIndex</h2>
+          <p className="si-subtitle">Log in to your knowledge base</p>
+          <form onSubmit={handleLogin}>
+            <label className="si-label">Email</label>
+            <input
+              className="si-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <label className="si-label">Password</label>
+            <input
+              className="si-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button className="si-button" type="submit">Log In</button>
+          </form>
+          {loginMessage && (
+            <p className={loginError ? "si-message-error" : "si-message-success"} style={{ marginTop: "16px" }}>
+              {loginMessage}
+            </p>
+          )}
+        </div>
       </div>
     );
   }
 
- return (
-    <div style={{ maxWidth: "600px", margin: "80px auto", fontFamily: "sans-serif" }}>
-      <h2>Welcome, {fullName}</h2>
+  return (
+    <div className="si-container">
+      <p className="si-welcome">Welcome, {fullName} 🌸</p>
 
-      <div style={{ marginBottom: "20px" }}>
-        <button onClick={() => setActiveTab("upload")} style={{ marginRight: "8px", fontWeight: activeTab === "upload" ? "bold" : "normal" }}>
+      <div className="si-tabs">
+        <button
+          className={`si-tab ${activeTab === "upload" ? "active" : ""}`}
+          onClick={() => setActiveTab("upload")}
+        >
           Upload
         </button>
-        <button onClick={() => setActiveTab("search")} style={{ fontWeight: activeTab === "search" ? "bold" : "normal" }}>
+        <button
+          className={`si-tab ${activeTab === "search" ? "active" : ""}`}
+          onClick={() => setActiveTab("search")}
+        >
           Search
         </button>
       </div>
 
       {activeTab === "upload" && (
-        <div>
-          <h3>Upload a Resource</h3>
+        <div className="si-card">
+          <h3 className="si-title" style={{ fontSize: "18px" }}>Upload a Resource</h3>
           <form onSubmit={handleUpload}>
             <input
+              className="si-input"
               type="file"
               accept=".png,.jpg,.jpeg,.pdf"
               onChange={(e) => setFile(e.target.files[0])}
-              style={{ marginBottom: "12px" }}
             />
-            <br />
-            <button type="submit" style={{ padding: "8px 16px" }}>Upload</button>
+            <button className="si-button" type="submit">Upload</button>
           </form>
-          {uploadError && <p style={{ color: "red" }}>{uploadError}</p>}
+
+          {uploadError && <p className="si-message-error" style={{ marginTop: "12px" }}>{uploadError}</p>}
+
           {uploadResult && (
-            <div style={{ marginTop: "16px", padding: "12px", border: "1px solid #ccc" }}>
-              <p><strong>Uploaded successfully.</strong></p>
-              <p>Resource ID: {uploadResult.resourceID}</p>
-              <p>OCR Confidence: {uploadResult.ocrConfidence ? uploadResult.ocrConfidence.toFixed(1) + "%" : "N/A"}</p>
-              {uploadResult.needsReview && (
-                <p style={{ color: "orange" }}>⚠ Low OCR confidence — flagged for review.</p>
-              )}
-              <p><strong>Extracted text:</strong></p>
-              <p style={{ maxHeight: "150px", overflow: "auto", background: "#f5f5f5", padding: "8px" }}>
-                {uploadResult.extractedText || "(no text extracted)"}
+            <div className="si-result-card">
+              <p className="si-message-success">Uploaded successfully.</p>
+              <p style={{ fontSize: "13px" }}>Resource ID: {uploadResult.resourceID}</p>
+              <p style={{ fontSize: "13px" }}>
+                OCR Confidence: {uploadResult.ocrConfidence ? uploadResult.ocrConfidence.toFixed(1) + "%" : "N/A"}
               </p>
+              {uploadResult.needsReview && (
+                <p className="si-warning">⚠ Low OCR confidence — flagged for review.</p>
+              )}
+              {uploadResult.duplicateWarning && uploadResult.duplicateWarning.length > 0 && (
+                <p className="si-warning">
+                  ⚠ Possible duplicate — similar to resource ID {uploadResult.duplicateWarning[0].resourceID}
+                  {" "}({(uploadResult.duplicateWarning[0].similarity * 100).toFixed(1)}% match).
+                </p>
+              )}
+              <p className="si-label" style={{ marginTop: "10px" }}>Extracted text</p>
+              <div className="si-extracted-box">{uploadResult.extractedText || "(no text extracted)"}</div>
             </div>
           )}
         </div>
       )}
 
       {activeTab === "search" && (
-        <div>
-          <h3>Search Your Resources</h3>
+        <div className="si-card">
+          <h3 className="si-title" style={{ fontSize: "18px" }}>Search Your Resources</h3>
           <form onSubmit={handleSearch}>
             <input
+              className="si-input"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="e.g. customer order process"
-              style={{ width: "100%", padding: "8px", marginBottom: "8px" }}
             />
-            <button type="submit" style={{ padding: "8px 16px" }}>Search</button>
+            <button className="si-button" type="submit">Search</button>
           </form>
 
-          {searchError && <p style={{ color: "red" }}>{searchError}</p>}
+          {searchError && <p className="si-message-error" style={{ marginTop: "12px" }}>{searchError}</p>}
 
           {searchResults.length === 0 && !searchError && (
-            <p style={{ color: "#888" }}>No results yet — try a search above.</p>
+            <p style={{ color: "#b98d94", fontSize: "14px", marginTop: "12px" }}>No results yet — try a search above.</p>
           )}
 
-          {searchResults.map((r) => (
-            <div key={r.resourceID} style={{ marginTop: "12px", padding: "12px", border: "1px solid #ccc" }}>
-              <p><strong>{r.title}</strong> ({r.similarityScore}% match)</p>
-              <p style={{ fontSize: "14px", color: "#555" }}>{r.extractedText}...</p>
+          {searchResults.map((r, i) => (
+            <div className="si-result-card" key={`${r.resourceID}-${i}`}>
+              <p className="si-result-title">
+                {r.title} <span className="si-result-score">({r.similarityScore}% match)</span>
+              </p>
+              <p className="si-result-snippet">{r.extractedText}...</p>
             </div>
           ))}
         </div>

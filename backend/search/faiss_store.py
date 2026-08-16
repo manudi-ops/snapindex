@@ -53,3 +53,27 @@ def search_index(query_vector, k=5):
         resource_id = _id_map[pos]
         results.append({"resourceID": resource_id, "score": float(score)})
     return results
+
+DUPLICATE_THRESHOLD = 0.92  
+
+def find_duplicates(embedding_vector, exclude_resource_id=None):
+    index = get_index()
+    if index.ntotal == 0:
+        return []
+
+    vector = np.array([embedding_vector], dtype="float32")
+    faiss.normalize_L2(vector)
+
+    k = min(5, index.ntotal)
+    scores, positions = index.search(vector, k)
+
+    duplicates = []
+    for score, pos in zip(scores[0], positions[0]):
+        if pos == -1:
+            continue
+        resource_id = _id_map[pos]
+        if resource_id == exclude_resource_id:
+            continue
+        if score >= DUPLICATE_THRESHOLD:
+            duplicates.append({"resourceID": resource_id, "similarity": float(score)})
+    return duplicates
