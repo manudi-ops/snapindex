@@ -1,4 +1,4 @@
-### Register a new user
+### Registering a new user
 POST http://127.0.0.1:5000/auth/register
 Content-Type: application/json
 
@@ -38,4 +38,16 @@ Content-Type: application/json
 
 {
   "query": "customer order process"
+}
+
+### List categories
+GET http://127.0.0.1:5000/categories
+
+### Create a new category
+POST http://127.0.0.1:5000/categories
+Content-Type: application/json
+
+{
+  "categoryName": "Nursing & Healthcare",
+  "description": "Nursing and healthcare: patient care, clinical practice, medical procedures, healthcare systems"
 }

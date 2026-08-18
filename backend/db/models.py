@@ -29,3 +29,9 @@ class AcademicResource(db.Model):
     ocrConfidence = db.Column(db.Float, nullable=True)
     needsReview = db.Column(db.Boolean, default=False)
     embeddingVectorID = db.Column(db.Integer, nullable=True)
+
+class Category(db.Model):
+    __tablename__ = "categories"
+    categoryID = db.Column(db.Integer, primary_key=True)
+    categoryName = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)

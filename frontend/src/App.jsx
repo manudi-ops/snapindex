@@ -20,6 +20,10 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchError, setSearchError] = useState("");
 
+  const [categories, setCategories] = useState([]);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginMessage("");
@@ -35,6 +39,7 @@ function App() {
         setLoggedIn(true);
         setUserID(data.userID);
         setFullName(data.fullName);
+        loadCategories();
       } else {
         setLoginError(true);
         setLoginMessage(data.error || "Login failed.");
@@ -92,6 +97,52 @@ function App() {
       setSearchError("Could not reach the server.");
     }
   };
+
+const loadCategories = async () => {
+  try {
+    const response = await fetch("http://127.0.0.1:5000/categories");
+    const data = await response.json();
+    setCategories(data);
+  } catch {
+   
+  }
+};
+
+const handleCategoryChange = async (resourceID, categoryID) => {
+  try {
+    const response = await fetch(`http://127.0.0.1:5000/resources/${resourceID}/category`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ categoryID }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      setUploadResult((prev) => ({ ...prev, category: data.category }));
+    }
+  } catch {
+   
+  }
+};
+
+const handleAddCategory = async () => {
+  if (!newCategoryName.trim()) return;
+  try {
+    const response = await fetch("http://127.0.0.1:5000/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ categoryName: newCategoryName.trim() }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      setNewCategoryName("");
+      loadCategories();
+      if (uploadResult) {
+        handleCategoryChange(uploadResult.resourceID, data.categoryID);
+      }
+    }
+  } catch {
+  }
+};  
 
   if (!loggedIn) {
     return (
@@ -177,6 +228,54 @@ function App() {
                   ⚠ Possible duplicate — similar to resource ID {uploadResult.duplicateWarning[0].resourceID}
                   {" "}({(uploadResult.duplicateWarning[0].similarity * 100).toFixed(1)}% match).
                 </p>
+              )}
+             {uploadResult.category && (
+                <div style={{ fontSize: "13px", marginTop: "8px" }}>
+                  <strong>Category:</strong> {uploadResult.category}
+                  {uploadResult.categoryConfidence !== null && ` (${uploadResult.categoryConfidence}% confidence)`}
+                  {" "}
+                  <button
+                    type="button"
+                    className="si-button"
+                    style={{ padding: "2px 10px", fontSize: "12px" }}
+                    onClick={() => setShowCategoryPicker(!showCategoryPicker)}
+                  >
+                    {showCategoryPicker ? "Cancel" : "Not right? Fix it"}
+                  </button>
+
+                  {showCategoryPicker && (
+                    <div style={{ marginTop: "10px" }}>
+                      <select
+                        className="si-input"
+                        style={{ marginBottom: "8px" }}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleCategoryChange(uploadResult.resourceID, parseInt(e.target.value));
+                            setShowCategoryPicker(false);
+                          }
+                        }}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Choose a category...</option>
+                        {categories.map((c) => (
+                          <option key={c.categoryID} value={c.categoryID}>{c.categoryName}</option>
+                        ))}
+                      </select>
+
+                      <p className="si-label">Or add a new category</p>
+                      <input
+                        className="si-input"
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="e.g. Nursing & Healthcare"
+                      />
+                      <button type="button" className="si-button" onClick={handleAddCategory}>
+                        Add & Assign
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
               <p className="si-label" style={{ marginTop: "10px" }}>Extracted text</p>
               <div className="si-extracted-box">{uploadResult.extractedText || "(no text extracted)"}</div>

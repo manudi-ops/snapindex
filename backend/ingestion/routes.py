@@ -7,6 +7,7 @@ import pytesseract
 from db.models import db, AcademicResource
 from search.embedding_service import generate_embedding
 from search.faiss_store import add_embedding, find_duplicates
+from classification.category_service import classify_text
 
 ingestion_bp = Blueprint("ingestion", __name__)
 
@@ -71,6 +72,9 @@ def upload_resource():
 
     embedding_vector_id = None
     duplicate_warning = None
+    category_name = None
+    category_confidence = None
+
     if extracted_text:
         embedding = generate_embedding(extracted_text)
         if embedding is not None:
@@ -78,9 +82,12 @@ def upload_resource():
             if duplicates:
                 duplicate_warning = duplicates
 
-
             embedding_vector_id = add_embedding(resource.resourceID, embedding)
             resource.embeddingVectorID = embedding_vector_id
+
+            category_id, category_name, category_confidence = classify_text(embedding)
+            resource.categoryID = category_id
+
             db.session.commit()
 
     return jsonify({
@@ -90,4 +97,6 @@ def upload_resource():
         "ocrConfidence": confidence,
         "needsReview": needs_review,
         "duplicateWarning": duplicate_warning,
+        "category": category_name,
+        "categoryConfidence": round(category_confidence * 100, 1) if category_confidence is not None else None,
     }), 201
