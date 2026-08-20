@@ -8,6 +8,7 @@ from db.models import db, AcademicResource
 from search.embedding_service import generate_embedding
 from search.faiss_store import add_embedding, find_duplicates
 from classification.category_service import classify_text
+from db.activity_logger import log_activity
 
 ingestion_bp = Blueprint("ingestion", __name__)
 
@@ -89,6 +90,8 @@ def upload_resource():
             resource.categoryID = category_id
 
             db.session.commit()
+
+    log_activity(user_id, "upload", resource.resourceID)
 
     return jsonify({
         "message": "Resource uploaded successfully",

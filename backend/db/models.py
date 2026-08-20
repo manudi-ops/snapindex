@@ -35,3 +35,11 @@ class Category(db.Model):
     categoryID = db.Column(db.Integer, primary_key=True)
     categoryName = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text, nullable=True)
+
+class BehaviourLog(db.Model):
+    __tablename__ = "behaviour_logs"
+    logID = db.Column(db.Integer, primary_key=True)
+    userID = db.Column(db.Integer, db.ForeignKey("users.userID"), nullable=False)
+    resourceID = db.Column(db.Integer, db.ForeignKey("academic_resources.resourceID"), nullable=True)
+    activityType = db.Column(db.String(50), nullable=False)  # "upload", "search", "open"
+    accessDate = db.Column(db.DateTime, default=datetime.utcnow)

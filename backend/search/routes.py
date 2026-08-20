@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from db.models import AcademicResource
 from search.embedding_service import generate_embedding
 from search.faiss_store import search_index
+from db.activity_logger import log_activity
 
 search_bp = Blueprint("search", __name__)
 
@@ -14,10 +15,14 @@ def rerank(results, query_text):
 
     for r in results:
         resource = AcademicResource.query.get(r["resourceID"])
-        text = (resource.extractedText or "").lower()
-        overlap = sum(1 for w in query_words if w in text)
-        r["keywordOverlap"] = overlap
-        r["combinedScore"] = r["score"] + (overlap * 0.05)
+        if resource is None:
+            r["keywordOverlap"] = 0
+            r["combinedScore"] = r["score"]
+        else:
+            text = (resource.extractedText or "").lower()
+            overlap = sum(1 for w in query_words if w in text)
+            r["keywordOverlap"] = overlap
+            r["combinedScore"] = r["score"] + (overlap * 0.05)
 
     results.sort(key=lambda r: r["combinedScore"], reverse=True)
     return results
@@ -27,6 +32,7 @@ def rerank(results, query_text):
 def search():
     data = request.get_json()
     query = data.get("query", "").strip()
+    user_id = data.get("userID")
 
     if not query:
         return jsonify({"error": "Search query cannot be empty"}), 400
@@ -54,4 +60,18 @@ def search():
                 "fileType": resource.fileType,
             })
 
+    if user_id:
+        log_activity(user_id, "search")
+
     return jsonify({"results": output}), 200
+
+@search_bp.route("/resources/<int:resource_id>/open", methods=["POST"])
+def open_resource(resource_id):
+    data = request.get_json()
+    user_id = data.get("userID")
+
+    if not user_id:
+        return jsonify({"error": "userID is required"}), 400
+
+    log_activity(user_id, "open", resource_id)
+    return jsonify({"message": "Access logged"}), 200

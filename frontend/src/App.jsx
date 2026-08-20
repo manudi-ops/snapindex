@@ -85,7 +85,7 @@ function App() {
       const response = await fetch("http://127.0.0.1:5000/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery }),
+        body: JSON.stringify({ query: searchQuery, userID }),
       });
       const data = await response.json();
       if (response.ok) {
@@ -97,6 +97,17 @@ function App() {
       setSearchError("Could not reach the server.");
     }
   };
+
+  const handleOpenResource = async (resourceID) => {
+  try {
+    await fetch(`http://127.0.0.1:5000/resources/${resourceID}/open`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userID }),
+    });
+  } catch {
+  }
+};
 
 const loadCategories = async () => {
   try {
@@ -305,7 +316,12 @@ const handleAddCategory = async () => {
           )}
 
           {searchResults.map((r, i) => (
-            <div className="si-result-card" key={`${r.resourceID}-${i}`}>
+            <div
+              className="si-result-card"
+              key={`${r.resourceID}-${i}`}
+              onClick={() => handleOpenResource(r.resourceID)}
+              style={{ cursor: "pointer" }}
+            >
               <p className="si-result-title">
                 {r.title} <span className="si-result-score">({r.similarityScore}% match)</span>
               </p>
