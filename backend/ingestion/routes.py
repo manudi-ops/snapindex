@@ -1,4 +1,7 @@
 import os
+import pdfplumber
+from docx import Document as DocxDocument
+from pptx import Presentation
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
@@ -16,6 +19,9 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), "upload
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 IMAGE_EXTENSIONS = {"png", "jpg", "jpeg"}
+PDF_EXTENSIONS = {"pdf"}
+DOCX_EXTENSIONS = {"docx"}
+PPTX_EXTENSIONS = {"pptx"}
 OCR_CONFIDENCE_THRESHOLD = 60  # out of 100, per FR3
 
 def get_extension(filename):
@@ -58,6 +64,53 @@ def upload_resource():
         except Exception as e:
             return jsonify({"error": f"OCR failed: {str(e)}"}), 500
 
+    elif extension in PDF_EXTENSIONS:
+     try:
+            text_parts = []
+            with pdfplumber.open(save_path) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text_parts.append(page_text)
+
+            extracted_text = "\n".join(text_parts).strip()
+
+            if extracted_text:
+                confidence = 100.0  # digitally-extracted text, not OCR'd — treat as fully trustworthy
+                needs_review = False
+            else:
+                # scanned/image-only PDF with no extractable text layer
+                extracted_text = None
+                confidence = 0.0
+                needs_review = True
+
+     except Exception as e:
+            return jsonify({"error": f"PDF text extraction failed: {str(e)}"}), 500
+
+    elif extension in DOCX_EXTENSIONS:
+        try:
+            doc = DocxDocument(save_path)
+            text_parts = [p.text for p in doc.paragraphs if p.text.strip()]
+            extracted_text = "\n".join(text_parts).strip()
+            confidence = 100.0 if extracted_text else 0.0
+            needs_review = not bool(extracted_text)
+        except Exception as e:
+            return jsonify({"error": f"DOCX text extraction failed: {str(e)}"}), 500
+
+    elif extension in PPTX_EXTENSIONS:
+        try:
+            prs = Presentation(save_path)
+            text_parts = []
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text.strip():
+                        text_parts.append(shape.text)
+            extracted_text = "\n".join(text_parts).strip()
+            confidence = 100.0 if extracted_text else 0.0
+            needs_review = not bool(extracted_text)
+        except Exception as e:
+            return jsonify({"error": f"PPTX text extraction failed: {str(e)}"}), 500
+
     resource = AcademicResource(
         userID=user_id,
         title=filename,
@@ -91,7 +144,7 @@ def upload_resource():
 
             db.session.commit()
 
-    log_activity(user_id, "upload", resource.resourceID)
+        log_activity(user_id, "upload", resource.resourceID)
 
     return jsonify({
         "message": "Resource uploaded successfully",
