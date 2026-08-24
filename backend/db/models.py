@@ -43,3 +43,12 @@ class BehaviourLog(db.Model):
     resourceID = db.Column(db.Integer, db.ForeignKey("academic_resources.resourceID"), nullable=True)
     activityType = db.Column(db.String(50), nullable=False)  # "upload", "search", "open"
     accessDate = db.Column(db.DateTime, default=datetime.utcnow)
+
+class KnowledgeNeglectAnalysis(db.Model):
+    __tablename__ = "knowledge_neglect_analysis"
+    analysisID = db.Column(db.Integer, primary_key=True)
+    userID = db.Column(db.Integer, db.ForeignKey("users.userID"), nullable=False)
+    categoryID = db.Column(db.Integer, db.ForeignKey("categories.categoryID"), nullable=False)
+    neglectScore = db.Column(db.Float, nullable=False)
+    summary = db.Column(db.Text, nullable=True)
+    generatedDate = db.Column(db.DateTime, default=datetime.utcnow)

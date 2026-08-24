@@ -5,6 +5,7 @@ from auth.routes import auth_bp, bcrypt
 from ingestion.routes import ingestion_bp
 from search.routes import search_bp
 from classification.routes import classification_bp
+from neglect.routes import neglect_bp
 
 app = Flask(__name__) 
 CORS(app)
@@ -15,6 +16,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(ingestion_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(classification_bp)
+app.register_blueprint(neglect_bp)
 
 DEFAULT_CATEGORIES = [
     ("Programming & Software Development", "Programming and software development: code, algorithms, functions, debugging, software design, programming languages, source code examples"),
