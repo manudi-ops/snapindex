@@ -12,6 +12,7 @@ from search.embedding_service import generate_embedding
 from search.faiss_store import add_embedding, find_duplicates
 from classification.category_service import classify_text
 from db.activity_logger import log_activity
+from flask import send_file
 
 ingestion_bp = Blueprint("ingestion", __name__)
 
@@ -156,3 +157,12 @@ def upload_resource():
         "category": category_name,
         "categoryConfidence": round(category_confidence * 100, 1) if category_confidence is not None else None,
     }), 201
+
+@ingestion_bp.route("/resources/<int:resource_id>/file", methods=["GET"])
+def get_resource_file(resource_id):
+    resource = AcademicResource.query.get(resource_id)
+    if not resource:
+        return jsonify({"error": "Resource not found"}), 404
+    if not os.path.exists(resource.filePath):
+        return jsonify({"error": "File not found on disk"}), 404
+    return send_file(resource.filePath, as_attachment=False, download_name=resource.fileName)
