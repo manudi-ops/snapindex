@@ -51,3 +51,14 @@ Content-Type: application/json
   "categoryName": "Nursing & Healthcare",
   "description": "Nursing and healthcare: patient care, clinical practice, medical procedures, healthcare systems"
 }
+
+### Run neglect analysis
+POST http://127.0.0.1:5000/neglect/analyse
+Content-Type: application/json
+
+{
+  "userID": 1
+}
+
+### Get dashboard
+GET http://127.0.0.1:5000/dashboard/1

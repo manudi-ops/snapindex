@@ -1,7 +1,8 @@
 from datetime import datetime
 import numpy as np
 from sklearn.ensemble import IsolationForest
-from db.models import db, AcademicResource, BehaviourLog, KnowledgeNeglectAnalysis, Category
+from db.models import db, AcademicResource, BehaviourLog, KnowledgeNeglectAnalysis, Category, Reminder
+from db.models import Reminder
 
 ACCESS_RATIO_THRESHOLD = 0.5
 
@@ -88,6 +89,19 @@ def detect_neglect(user_id):
                 summary=summary,
             )
             db.session.add(record)
+
+            existing_reminder = Reminder.query.filter_by(
+                userID=user_id, categoryID=cat_id, status="active"
+            ).first()
+
+            if not existing_reminder:
+                reminder_message = f"You have {upload_count} resource(s) in {category.categoryName if category else 'this topic'} that you haven't revisited. Consider reviewing them."
+                reminder = Reminder(
+                    userID=user_id,
+                    categoryID=cat_id,
+                    message=reminder_message,
+                )
+                db.session.add(reminder)
 
     db.session.commit()
 

@@ -52,3 +52,12 @@ class KnowledgeNeglectAnalysis(db.Model):
     neglectScore = db.Column(db.Float, nullable=False)
     summary = db.Column(db.Text, nullable=True)
     generatedDate = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Reminder(db.Model):
+    __tablename__ = "reminders"
+    reminderID = db.Column(db.Integer, primary_key=True)
+    userID = db.Column(db.Integer, db.ForeignKey("users.userID"), nullable=False)
+    categoryID = db.Column(db.Integer, db.ForeignKey("categories.categoryID"), nullable=True)
+    message = db.Column(db.Text, nullable=False)
+    reminderDate = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default="active")  # active / dismissed

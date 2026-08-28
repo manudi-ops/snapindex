@@ -24,6 +24,9 @@ function App() {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
 
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginMessage("");
@@ -155,6 +158,40 @@ const handleAddCategory = async () => {
   }
 };  
 
+const loadDashboard = async () => {
+  setDashboardLoading(true);
+  try {
+    const response = await fetch(`http://127.0.0.1:5000/dashboard/${userID}`);
+    const data = await response.json();
+    setDashboardData(data);
+  } catch {
+    setDashboardData(null);
+  }
+  setDashboardLoading(false);
+};
+
+const runNeglectAnalysis = async () => {
+  try {
+    await fetch("http://127.0.0.1:5000/neglect/analyse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userID }),
+    });
+    loadDashboard();
+  } catch {
+    // silent
+  }
+};
+
+const dismissReminder = async (reminderID) => {
+  try {
+    await fetch(`http://127.0.0.1:5000/reminders/${reminderID}/dismiss`, { method: "PUT" });
+    loadDashboard();
+  } catch {
+    // silent
+  }
+};
+
   if (!loggedIn) {
     return (
       <div className="si-container">
@@ -206,6 +243,12 @@ const handleAddCategory = async () => {
           onClick={() => setActiveTab("search")}
         >
           Search
+        </button>
+        <button
+          className={`si-tab ${activeTab === "dashboard" ? "active" : ""}`}
+          onClick={() => { setActiveTab("dashboard"); loadDashboard(); }}
+        >
+          Dashboard
         </button>
       </div>
 
@@ -328,6 +371,82 @@ const handleAddCategory = async () => {
               <p className="si-result-snippet">{r.extractedText}...</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {activeTab === "dashboard" && (
+        <div className="si-card">
+          <h3 className="si-title" style={{ fontSize: "18px" }}>Your Dashboard</h3>
+
+          <button className="si-button" onClick={runNeglectAnalysis} style={{ marginBottom: "16px" }}>
+            Run Neglect Analysis
+          </button>
+
+          {dashboardLoading && <p style={{ color: "#b98d94" }}>Loading...</p>}
+
+          {dashboardData && (
+            <>
+              <p style={{ fontSize: "13px", color: "#8a7373" }}>
+                Total resources: {dashboardData.totalResources}
+              </p>
+
+              {dashboardData.reminders.length > 0 && (
+                <div>
+                  <p className="si-label" style={{ marginTop: "16px" }}>Study Reminders</p>
+                  {dashboardData.reminders.map((r) => (
+                    <div key={r.reminderID} className="si-warning" style={{ marginTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>⚠ {r.message}</span>
+                      <button
+                        type="button"
+                        className="si-button"
+                        style={{ padding: "2px 10px", fontSize: "11px", marginLeft: "10px" }}
+                        onClick={() => dismissReminder(r.reminderID)}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {dashboardData.neglectSummary.length > 0 && (
+                <div>
+                  <p className="si-label" style={{ marginTop: "16px" }}>Neglected Topics</p>
+                  {dashboardData.neglectSummary.map((n, i) => (
+                    <div key={i} className="si-result-card">
+                      <p className="si-result-title">{n.categoryName}</p>
+                      <p className="si-result-snippet">{n.summary}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+                {dashboardData.mostCollected && (
+                  <div className="si-result-card" style={{ flex: 1 }}>
+                    <p className="si-label">Most Collected</p>
+                    <p style={{ fontSize: "13px" }}>{dashboardData.mostCollected.categoryName}</p>
+                    <p className="si-result-snippet">{dashboardData.mostCollected.resourceCount} resources</p>
+                  </div>
+                )}
+                {dashboardData.leastEngaged && (
+                  <div className="si-result-card" style={{ flex: 1 }}>
+                    <p className="si-label">Least Engaged</p>
+                    <p style={{ fontSize: "13px" }}>{dashboardData.leastEngaged.categoryName}</p>
+                    <p className="si-result-snippet">{Math.round(dashboardData.leastEngaged.accessRatio * 100)}% opened</p>
+                  </div>
+                )}
+              </div>
+
+              <p className="si-label" style={{ marginTop: "16px" }}>Recent Activity</p>
+              {dashboardData.recentResources.map((r) => (
+                <div key={r.resourceID} className="si-result-card">
+                  <p className="si-result-title">{r.title}</p>
+                  <p className="si-result-snippet">{new Date(r.uploadDate).toLocaleString()}</p>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
